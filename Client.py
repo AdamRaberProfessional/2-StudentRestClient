@@ -42,10 +42,10 @@ def initiate_request():
         url = 'http://localhost:8080/getstudent'
         params = {'id': student_number}
         try:
-            data = requests.get(url, params)
-            data = data.content.decode()
-            print(data)
-            student = json.loads(data)
+            response = requests.get(url, params)
+            response = response.content.decode()
+            print(response)
+            student = json.loads(response)
         except OSError:
             update_listbox("Error connecting to the server")
         else:
@@ -66,11 +66,11 @@ def initiate_request():
         url = 'http://localhost:8080/getstudent'
         params = {"id": "all"}
         try:
-            data = requests.get(url, params)
-            data = data.content.decode()
-            data = json.loads(data)
-            for key in data:
-                student = data[key]
+            response = requests.get(url, params)
+            response = response.content.decode()
+            response = json.loads(response)
+            for key in response:
+                student = response[key]
                 if student["major"] is not None:
                     update_listbox(
                         key + ". " + student["firstname"] + " " + student["lastname"] + " is a college student in grade "
@@ -109,12 +109,12 @@ def initiate_request():
             url = 'http://localhost:8080/editstudent'
             print(student_index, property_editing, new_property_val)
             data = {"id": student_index, "attributeChange": property_editing, "attributeVal": new_property_val}
+            response = None
             try:
-                data = requests.post(url, data)
+                response = requests.post(url, data)
             except OSError:
-                if OSError:
-                    update_listbox("Error connecting to server")
-            if data.status_code == 200:
+                update_listbox("Error connecting to server")
+            if response.status_code != 200:
                 update_listbox("Student " + student_index + "'s " + property_editing + " has been edited")
             else:
                 update_listbox("Error editing student")
@@ -153,8 +153,18 @@ def initiate_request():
                     update_listbox("What is this student's major?")
                     request_msg = "create4"
                 else:
-                    update_listbox("SEND CALL HERE")
-                    print(new_fname, new_lname, grade, new_major)
+                    # ERROR when editing a student. can do non-numerical grades.
+                    url = 'http://localhost:8080/createstudent'
+                    data = {"fname": new_fname, "lname": new_lname, "grade": new_grade}
+                    response = None
+                    try:
+                        response = requests.post(url, data)
+                    except OSError:
+                        update_listbox("Error connecting to server")
+                    if response.status_code == 200:
+                        update_listbox("The student has been created.")
+                    else:
+                        update_listbox("Error creating student")
                     reset_modifications()
             except:
                 print(Exception)
@@ -164,8 +174,17 @@ def initiate_request():
         new_major = message_txt.get()
         message_txt.set("")
         if len(new_major) >- 1 and len(new_major) <=4:
-            update_listbox("SEND CALL HERE")
-            print(new_fname, new_lname, new_grade, new_major)
+            url = 'http://localhost:8080/createstudent'
+            data = {"fname": new_fname, "lname": new_lname, "major": new_major, "grade": new_grade}
+            response = None
+            try:
+                response = requests.post(url, data)
+            except OSError:
+                update_listbox("Error connecting to server")
+            if response.status_code == 200:
+                update_listbox("The student has been created.")
+            else:
+                update_listbox("Error creating student")
         else:
             update_listbox("Major must be between 1 and 4 characters. Creation cancelled.")
         reset_modifications()
